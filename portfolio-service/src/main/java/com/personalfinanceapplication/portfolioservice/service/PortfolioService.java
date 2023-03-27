@@ -10,8 +10,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.sound.sampled.Port;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +22,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 
 public class PortfolioService {
+
     private final PortfolioRepository portfolioRepository;
+    private final WebClient webClient;
     public void createPortfolio(PortfolioRequest portfolioRequest){
         Portfolio portfolio = Portfolio.builder().portfolioName(portfolioRequest.getPortfolioName()).
                 cashBalance(portfolioRequest.getCashBalance()).
@@ -54,21 +58,34 @@ public class PortfolioService {
 
     }
 
-    public void addNewAssetToPortfolio(String id, AssetRequest assetRequest){
-        Optional<Portfolio> optionalPortfolio = portfolioRepository.findById(id);
-        if(optionalPortfolio.isPresent()){
-            Portfolio portfolio = optionalPortfolio.get();
-            Asset asset = Asset.builder().assetName(assetRequest.getAssetName()).
-                    tickerSymbol(assetRequest.getTickerSymbol()).
-                    quantity(assetRequest.getQuantity()).
-                    currentPrice(assetRequest.getCurrentPrice()).build();
-
-            portfolio.getAssetList().add(asset);
-            portfolioRepository.save(portfolio);
-        }else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Portfolio with ID " + id + " not found");
-        }
+    public void addNewAssetToPortfolio(String id, String assetRequest) {
+        webClient.get()
+                .uri("http://localhost:8082/api/market-data/{symbol}", assetRequest)
+                .retrieve()
+                .bodyToMono(Asset.class)
+                .subscribe(asset -> {
+                    Optional<Portfolio> optionalPortfolio = portfolioRepository.findById(id);
+                    if(optionalPortfolio.isPresent()){
+                        Portfolio portfolio = optionalPortfolio.get();
+                        Asset as = Asset.builder()
+                                .assetName(asset.getAssetName())
+                                .tickerSymbol(asset.getTickerSymbol())
+                                .quantity(asset.getQuantity())
+                                .currentPrice(asset.getCurrentPrice())
+                                .build();
+                        portfolio.getAssetList().add(as);
+                        portfolioRepository.save(portfolio);
+                    } else {
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Portfolio with ID " + id + " not found");
+                    }
+                });
     }
+
+
+
+
+
+
 
 
 

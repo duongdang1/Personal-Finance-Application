@@ -36,10 +36,10 @@ public class PortfolioController {
         return portfolioService.getPortfolio(pid);
     }
 
-    @PostMapping("/{pid}/assets")
+    @PostMapping("/{pid}/{asset}")
     @ResponseStatus(HttpStatus.CREATED)
-    public void addNewAssetToPortfolio(@PathVariable String pid, @RequestBody AssetRequest assetRequest){
-        portfolioService.addNewAssetToPortfolio(pid, assetRequest);
+    public void addNewAssetToPortfolio(@PathVariable String pid, @PathVariable String asset){
+        portfolioService.addNewAssetToPortfolio(pid, asset);
     }
 
 
