@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 
 @Document(value="portfolio")
@@ -19,13 +20,25 @@ public class Portfolio {
     private String portfolioName;
 
     private double cashBalance;
-    private List<Asset> assetList;
+    private HashMap<String, Asset> assetList;
+//;    private List<Asset> assetList;
     private double totalValue;
 
     public double getTotalValue(){
         return totalValue;
     }
 
+    public void buyAsset(Asset asset){
+        double amount = asset.getQuantity() * asset.getCurrentPrice();
+        if(!assetList.containsKey(asset.getTickerSymbol()) && cashBalance >= amount) {
+            assetList.put(asset.getTickerSymbol(), asset);
+        }else{
+            assetList.get(asset.getTickerSymbol()).addQuantity(asset.getQuantity());
+        }
+        totalValue += amount;
+        cashBalance -= amount;
+
+    }
 
 
 

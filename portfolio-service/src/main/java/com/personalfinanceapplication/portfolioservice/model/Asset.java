@@ -19,6 +19,14 @@ public class Asset {
     private int quantity;
     private double currentPrice;
 
-//    private String portfolioId;
+    private String portfolioId;
+
+    public void addQuantity(int amount){
+        quantity+=amount;
+    }
+
+    public void setCurrentPrice(double price){
+        currentPrice = price;
+    }
 }
 

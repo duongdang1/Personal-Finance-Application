@@ -15,6 +15,6 @@ public class AssetRequest {
     private String tickerSymbol;
     private int quantity;
     private double currentPrice;
-//    private String portfolioId;
+    private String portfolioId;
 
 }

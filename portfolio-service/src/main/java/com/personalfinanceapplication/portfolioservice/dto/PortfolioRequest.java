@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashMap;
 import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,6 +17,6 @@ public class PortfolioRequest {
     private String portfolioName;
 
     private double cashBalance;
-    private List<Asset> assetList;
+    private HashMap<String, Asset> assetList;
     private double totalValue;
 }

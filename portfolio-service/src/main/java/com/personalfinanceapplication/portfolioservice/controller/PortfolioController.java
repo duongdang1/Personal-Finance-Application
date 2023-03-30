@@ -1,19 +1,22 @@
 package com.personalfinanceapplication.portfolioservice.controller;
 
-import com.personalfinanceapplication.portfolioservice.dto.AssetRequest;
 import com.personalfinanceapplication.portfolioservice.dto.PortfolioRequest;
 import com.personalfinanceapplication.portfolioservice.dto.PortfolioResponse;
+import com.personalfinanceapplication.portfolioservice.model.Portfolio;
 import com.personalfinanceapplication.portfolioservice.service.PortfolioService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("api/portfolio")
 @RequiredArgsConstructor
+
 public class PortfolioController {
     private final PortfolioService portfolioService;
 
@@ -32,15 +35,26 @@ public class PortfolioController {
 
     @GetMapping("/{pid}")
     @ResponseStatus(HttpStatus.OK)
-    public Optional<PortfolioResponse> getPortfolio(@PathVariable String pid){
+//    @CircuitBreaker(name="portfolio-service",fallbackMethod = "getPortfolioFallBackMethod")
+    public Portfolio getPortfolio(@PathVariable String pid){
         return portfolioService.getPortfolio(pid);
     }
 
-    @PostMapping("/{pid}/{asset}")
+//    public String getPortfolioFallBackMethod(@PathVariable String pid, RuntimeException runtimeException){
+//        return "market data service is down";
+//    }
+
+    @PostMapping("/{pid}/{asset}/{quantity}")
     @ResponseStatus(HttpStatus.CREATED)
-    public void addNewAssetToPortfolio(@PathVariable String pid, @PathVariable String asset){
-        portfolioService.addNewAssetToPortfolio(pid, asset);
+//    @CircuitBreaker(name="portfolio-service", fallbackMethod = "addNewAssetFallBackMethod")
+    public void addNewAssetToPortfolio(@PathVariable String pid, @PathVariable String asset, @PathVariable int quantity){
+        portfolioService.addNewAssetToPortfolio(pid, asset, quantity);
+
     }
+
+//    public String addNewAssetFallBackMethod(String pid, String asset, int quantity, RuntimeException runtimeException){
+//        return "market data service is down";
+//    }
 
 
 

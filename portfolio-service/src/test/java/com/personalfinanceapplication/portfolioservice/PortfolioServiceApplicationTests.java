@@ -22,6 +22,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import javax.sound.sampled.Port;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -84,7 +85,7 @@ class PortfolioServiceApplicationTests {
 		assetList.add(assetRequest);
 		return PortfolioRequest.builder().portfolioName("Dang's portfolio").
 				cashBalance(1000).
-				assetList(assetList).
+				assetList((HashMap<String, Asset>) assetList).
 				totalValue(500).build();
 	}
 }

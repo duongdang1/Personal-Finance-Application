@@ -1,6 +1,5 @@
 package com.personalfinanceapplication.portfolioservice.service;
 
-import com.personalfinanceapplication.portfolioservice.dto.AssetRequest;
 import com.personalfinanceapplication.portfolioservice.dto.PortfolioRequest;
 import com.personalfinanceapplication.portfolioservice.dto.PortfolioResponse;
 import com.personalfinanceapplication.portfolioservice.model.Asset;
@@ -12,10 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
-import javax.sound.sampled.Port;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -24,7 +25,7 @@ import java.util.Optional;
 public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
     public void createPortfolio(PortfolioRequest portfolioRequest){
         Portfolio portfolio = Portfolio.builder().portfolioName(portfolioRequest.getPortfolioName()).
                 cashBalance(portfolioRequest.getCashBalance()).
@@ -42,12 +43,31 @@ public class PortfolioService {
 
     }
 
-    public Optional<PortfolioResponse> getPortfolio(String pid){
-        Optional<Portfolio> portfolio = portfolioRepository.findById(pid);
-        return portfolio.map(this::mapToPortfolioResponse);
+    public Portfolio getPortfolio(String pid){
+
+        Optional<Portfolio> optionalPortfolio = portfolioRepository.findById(pid);
+        if(optionalPortfolio.isPresent()){
+            Portfolio portfolio = optionalPortfolio.get();
+            for (String ticker: portfolio.getAssetList().keySet()) {
+                webClientBuilder.build().get().uri("http://market-data-service/api/market-data/{symbol}", ticker).
+                        retrieve().
+                        bodyToMono(Asset.class).
+                        subscribe(asset -> {
+                            portfolio.getAssetList().get(ticker).setCurrentPrice(asset.getCurrentPrice());
+                            portfolioRepository.save(portfolio);
+                        });
+            }
+
+            return portfolio;
+
+        }
 
 
-    }
+        return null;
+    };
+
+
+
     public PortfolioResponse mapToPortfolioResponse(Portfolio portfolio){
         return PortfolioResponse.builder().
                 id(portfolio.getId()).
@@ -55,12 +75,11 @@ public class PortfolioService {
                 cashBalance(portfolio.getCashBalance()).
                 assetList(portfolio.getAssetList()).
                 totalValue(portfolio.getTotalValue()).build();
-
     }
 
-    public void addNewAssetToPortfolio(String id, String assetRequest) {
-        webClient.get()
-                .uri("http://localhost:8082/api/market-data/{symbol}", assetRequest)
+    public void addNewAssetToPortfolio(String id, String assetRequest, int quantity) {
+        webClientBuilder.build().get()
+                .uri("http://market-data-service/api/market-data/{symbol}", assetRequest)
                 .retrieve()
                 .bodyToMono(Asset.class)
                 .subscribe(asset -> {
@@ -70,10 +89,10 @@ public class PortfolioService {
                         Asset as = Asset.builder()
                                 .assetName(asset.getAssetName())
                                 .tickerSymbol(asset.getTickerSymbol())
-                                .quantity(asset.getQuantity())
+                                .quantity(quantity)
                                 .currentPrice(asset.getCurrentPrice())
                                 .build();
-                        portfolio.getAssetList().add(as);
+                        portfolio.buyAsset(as);
                         portfolioRepository.save(portfolio);
                     } else {
                         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Portfolio with ID " + id + " not found");
